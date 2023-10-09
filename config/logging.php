@@ -59,7 +59,7 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
-
+//        daily是每天分割日志
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

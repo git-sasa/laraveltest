@@ -12,7 +12,68 @@ class WeiboController extends Controller
     /**
      * 微博发布（发布微博）
      */
-    public function publish(){
+    public function publish(Request $request){
+
+//        $message = 'hello';
+//        $example = function() use ($message){
+//                  use关键字在闭包中是链接闭包与外部变量的桥梁，也就是说可以把函数外部的变量引入到闭包内部。
+//                  闭包中使用use声明的变量来自于生成闭包实例时所在作用域内的同名变量，而不是来自于运行闭包时所在作用域内的同名变量。
+//            var_dump($message);
+//        };
+//        echo $example();
+//输出hello
+//        $message = 'world';
+////输出hello 因为继承变量的值的时候是函数定义的时候而不是 函数被调用的时候
+//        echo $example();
+////重置为hello
+//        $message = 'hello';
+////此处传引用
+//        $example = function() use(&$message){
+//            var_dump($message);
+//        };
+//        echo $example();
+//////输出hello
+//        $message = 'world';
+//        echo $example();
+////此处输出world
+////闭包函数也用于正常的传值
+        $message = 'hello';
+        $example = function ($data) use ($message){
+            return "{$data},{$message}";
+        };
+
+        echo $example('world');
+        die;
+//        $score = $request->input('score');
+//        $b = true;
+//        if($b = false){
+//            dump("a");
+//        }else if($b){
+//            dump("b");
+//        }else if(!$b){
+//            dump("c");
+//        }else{
+//            dump("d");destroy
+//        }
+        $a = 'afgrter';
+        dump($a[5]);
+//        if ($score == 100) {
+//            dump("奖励一辆BMW");
+//        }else if ($score > 80 && $score <= 99){
+//            dump("奖励iphone7 plus");
+//        }else if ($score >= 60 && $score <= 80) {
+//            dump("奖励一个iPad");
+//        }
+//        $score = 10;
+//        if($score >9){
+//            dump(11111);
+//        }else if($score >5){
+//            dump(222222);
+//        }else if($score >3){
+//            dump(33333);
+//        }
+
+        die;
 
 
         //随机查询一条数据

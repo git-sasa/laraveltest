@@ -14,6 +14,7 @@ class LdyPhoneWechat extends Model
 
     public function test_sql($query){
         $result = DB::select($query);
+        DB::destroy(1);
         return $result;
 
     }

@@ -44,7 +44,14 @@ require __DIR__.'/../vendor/autoload.php';
 | 检索laravel应用程序的实例
 */
 
-$app = require_once __DIR__.'/../bootstrap/app.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';//tell speak talk
+// tell 告诉 讲述 说 辨别
+// speak 说话 演讲 陈述
+// talk  说 交谈 谈话
+//season 季节
+//science 科学
+//sport 体育运动
+//exercise 运动、练习、运用、锻炼、使用
 
 $kernel = $app->make(Kernel::class);//HTTP内核处理
 
@@ -52,5 +59,4 @@ $kernel = $app->make(Kernel::class);//HTTP内核处理
 $response = $kernel->handle(
     $request = Request::capture()
 )->send();
-
 $kernel->terminate($request, $response);

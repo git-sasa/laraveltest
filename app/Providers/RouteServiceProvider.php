@@ -51,7 +51,7 @@ class RouteServiceProvider extends ServiceProvider
 
     /**
      * Configure the rate limiters for the application.
-     *
+     * 为应用程序配置速率限制器
      * @return void
      */
     protected function configureRateLimiting()

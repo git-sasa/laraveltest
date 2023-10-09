@@ -4,11 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\RateLimiter;
+//use Illuminate\Support\Facades\RateLimiter;
+//use PHPUnit\Util\Exception;
+//use App\Http\Middleware\TestMiddleware;
 
 class LimitRequsetController extends Controller
 {
+
+//限流 ---令牌桶
+    public function __construct()
+    {
+        $this->middleware('test')->except('minLimit');
+        $this->middleware('limit')->only('minLimit');
+    }
     //令牌桶的另一个好处是可以方便的改变速度。一旦需要提高速率，则按需提高放入桶中的令牌的速率。一般会定时（比如100ms）往桶中增加一定数量的令牌，有些变种算法则实时的计算应该增加的令牌的数量。
     /**
      *
@@ -40,10 +50,10 @@ class LimitRequsetController extends Controller
         $resMin    = $this->getRedis($minNumKey, $this->minNum, 60);
         $resDay    = $this->getRedis($dayNumKey, $this->dayNum, 86400);
 
-        return [
+        return Response()->success([
             'min'=>$resMin,
             'day'=>$resDay
-        ];
+        ]);
     }
 
     /**
@@ -94,6 +104,15 @@ class LimitRequsetController extends Controller
 
 
     public function limit_data(Request $request){
+
+        return response()->json(['status'=>200,'data'=>123123]);
+//        try{
+//
+//            $err = 'try抛出异常错误';
+//            throw new Exception($err,12312);
+//        }catch(Exception $e){
+//            return '捕获异常：'.$e->getMessage().'，错误代码：'.$e->getCode();
+//        }
 //        对于未设置的变量的判断
 //        empty：变量为空
 //        isset：变量未设置或变量为空

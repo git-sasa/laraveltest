@@ -9,12 +9,16 @@ class Handler extends ExceptionHandler
 {
     /**
      * A list of the exception types that are not reported.
-     *
+     * 未报告的异常类型的列表。
      * @var array<int, class-string<Throwable>>
      */
     protected $dontReport = [
+        NotFoundHttpException::class
         //
     ];
+
+
+
 
     /**
      * A list of the inputs that are never flashed for validation exceptions.
@@ -27,15 +31,19 @@ class Handler extends ExceptionHandler
         'password_confirmation',
     ];
 
+
+
+
+
     /**
      * Register the exception handling callbacks for the application.
      *
      * @return void
      */
-    public function register()
-    {
-        $this->reportable(function (Throwable $e) {
-            //
-        });
-    }
+//    public function register()
+//    {
+//        $this->reportable(function (Throwable $e) {
+//            //
+//        });
+//    }
 }

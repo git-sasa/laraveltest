@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'sync'),
+    'default' => env('QUEUE_CONNECTION', 'redis'),
 
     /*
     |--------------------------------------------------------------------------
@@ -64,11 +64,12 @@ return [
 
         'redis' => [
             'driver' => 'redis',
-            'connection' => 'default',
-            'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => 90,
-            'block_for' => null,
-            'after_commit' => false,
+            'connection' => 'queue',
+            'queue' => env('REDIS_QUEUE', '2'),
+            'retry_after' => 90,    //当前queue执行时间超过retry_after但是不超过timeout将会被再次执行。
+//            注意retry_after要比timeout多几秒，这将确保给定任务的worker总是在重试作业之前被杀死。 如果timeout > retry_after任务可能会被处理两次。
+//            'block_for' => null,
+//            'after_commit' => false,
         ],
 
     ],

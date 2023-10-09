@@ -14,5 +14,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+//    $nbMaxDecimals = 2;
+//    $min = 0;
+//    $max = 10;
+//    if ($min > $max) {
+//        throw new \LogicException('Invalid coordinates boundaries');
+//    }
+//    for($i=0;$i<20;$i++){
+//        dump(round($min + mt_rand() / mt_getrandmax() * ($max - $min), $nbMaxDecimals));
+//    }
+//    die;
     return view('welcome');
+
+
 });

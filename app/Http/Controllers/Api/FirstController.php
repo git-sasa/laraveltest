@@ -3,23 +3,207 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use http\Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
-use App\Http\Requests\LoginRequest;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\StoreBlogPost;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class FirstController extends Controller
 {
 
-    public function login(LoginRequest $request){
-        $params = $request->all();
-        $token =Auth::guard('api')->attempt($params);
+    public function text(){
+
+
+        $goods_total = 20;
+        Redis::set('goods_stock',$goods_total);
+        Redis::del("user_list");
+
+        for($i=1;$i<=30;$i++){
+            $user_id = mt_rand(1,40);
+            $this->good_total($user_id);
+
+
+        }
+
+    }
+//    防超卖
+    public function good_total($user_id){
+        $redis_stock = Redis::get('goods_stock');//剩余商品数量
+
+        if(empty($redis_stock) && $redis_stock == 0){
+            echo "商品已被抢空"."</br>";
+            return ;
+        }
+
+        $redis_list = Redis::lrange("user_list",0,-1);  //从左向右获取所有数据
+//        限定之抢购一次
+        dump($redis_list);
+        if(empty($redis_list)){
+            Redis::lpush("user_list",$user_id); //从左向右插入数据
+        }else{
+            if(in_array($user_id,$redis_list)){
+                echo "您已经抢购过啦，用户id:".$user_id."</br>";
+                return;
+            }else{
+                Redis::lpush("user_list",$user_id);
+            }
+
+        }
+        if($redis_stock > 0){
+            //lua脚本
+//            tonumber函数会尝试将它的参数转化为数字，否则返回 nil（表示转换失败）
+//            redis.call() 脚本中调用redis命令，执行特定的处理逻辑，会抛出异常，导致执行终端。
+//            redis.pcall() 脚本中调用redis命令，执行特定的处理逻辑，忽略异常，返回错误信息。
+//            Redis.eval() 执行lua脚本
+            $str = <<<Lua
+                local key = KEYS[1];
+                local redis_stock = redis.call('get',key);
+                if(tonumber(redis_stock) > 0)
+                then
+                    redis.call('decr',key);
+                    return true;
+                else
+                    return false;
+                end
+            Lua;
+
+            Redis::set("my_test",2);
+
+
+//            Redis::eval()执行lua脚本
+            $res =Redis::eval($str,1,"goods_stock");
+            if($res){
+                $user_id = Redis::lpop("user_list");    //这里有个问题：lpop [移除并返回列表 key 的头元素],这里都移除了问什么还有数据
+                DB::beginTransaction();
+                try{
+                    $data = [
+                        "user_id"=>$user_id,
+                        "orders_num"=>time().mt_rand(10,99),
+                    ];
+
+                    $res = DB::table("test_table")->lockForUpdate()->insert($data);
+                    echo "抢购成功，用户id:".$user_id."</br>";
+                    DB::commit();
+                    Redis::lpush("user_list",$user_id);
+                    return ;
+
+                }catch(\Exception $e){
+                    DB::rollBack();
+                    echo "抢购失败，用户id:".$user_id.",".$e->getMessage()."</br>";
+                    return ;
+                }
+            }else{
+                echo "商品已被抢空，用户id:".$user_id."</br>";
+                return ;
+            }
+        }
+        echo "商品已被抢空，用户id:".$user_id."</br>";
+        return;
+
+
+    }
+    public function index(){
+//        $lua = '
+//            local i = redis.call("INCR",KEYS[1])
+//            if i > 10 then
+//                return "wait"
+//            else
+//                if i == 1
+//                then
+//                    redis.call("expire",KEYS[1],KEYS[2])
+//                end
+//                return redis.call("get",KEYS[3])
+//                end
+//        ';
+//
+//        Redis::eval($lua,3,aprintf(RedisKey::API_LIMIT,$key,$callService['service']),60,$cache_key);
+    }
+
+    public function try_catch_test(StoreBlogPost $request){
+
+        $arr = [
+            'a'=>'a1',
+            'b'=>'b1',
+        ];
+        return response()->success($arr);
+        $validator = $request->validated();
+//        获取上传文件的原始名称
+        $path = $request->file('file')->store('avatars');
+
+        $path = $request->file('file')->getClientOriginalName();
+        $extension = $request->file('file')->extension();
+
+//    public function try_catch_test(Request $request){
+//        方法一：自定义验证、手动跳转到指定页面
+//        $validator = Validator::make($request->all(),[
+//            'title'=>'required|unique:posts|max:3',
+//            'body'=>'required',
+//        ]);
+//
+//        if($validator->fails()){
+//            return redirect('api/guess_friend')
+//                    ->withErrors($validator)
+//                    ->withInput();
+//        }
+
+       return $validator;
+//        方法二
+        $validator = Validator::make($request->all(),[
+            'title'=>'required|unique:posts|max:3',
+            'body'=>'required',
+        ]);
+        $errors = $validator->errors();
+        die;
+
+        $a = 1;
+        $log = new Log();
+        try {
+            $a = 1 / 1;
+            $log::info("try ======== res:".$a);
+            return $a;
+        } catch (\Exception $exception) {
+            $a++;
+            $log::info("catch ======== res:".$a);
+            return $a;
+        } finally {
+            $a++;
+            $log::info("finally ======== res:".$a);
+//            return $a;
+        }
+
+//        $a = 1;
+//        try {
+//            $a = 1 / 0;
+//            app('log')->info("try ======== res:".$a);
+//            return $a;
+//        } catch (\Exception $exception) {
+//            $a++;
+//            app('log')->info("catch ======== res:".$a);
+//            return $a;
+//        } finally {
+//            $a++;
+//            app('log')->info("finally ======== res:".$a);
+//            return $a;
+//        }
+//        $params = $request->all();
+//        $token =Auth::guard('api')->attempt($params);
     }
     public function test_redis_string(){
+        $arr = [
+            'a'=>'123',
+            'b'=>'456',
+        ];
+        return Response()->success($arr);
         $result = $this->rank();
-        dump($result);die;
+//        dump($result);die;
         $result = min(60,(60-1)+ 60/60 * (50-40));
-        dd($result);
+//        dd($result);
 //
 //        $key_1 = 'user_num';
 //        Redis::incr($key_1);
@@ -59,6 +243,7 @@ class FirstController extends Controller
 //        Redis::del('key1');
 //        //获取缓存
 //        dd(Redis::get('key2'));
+        return Response::json(['code'=>200,'data'=>[]]);
     }
 
     public function test_redis_hash(){
@@ -272,15 +457,15 @@ class FirstController extends Controller
         Redis::zunionstore('out',['zset1','zset2'],['weights'=>[2,3]]);
         Redis::zunionstore('out1',['zset1','zset2'],['aggregate'=>'min']);//并集分数不相加，取最大值
         Redis::zunionstore('out2',['zset1','zset2']);//并集分数相加
-        dump(Redis::zrange('out1',0,-1,true));
-        dump(Redis::zrange('out2',0,-1,true));
+        dump(Redis::zrange('out1',0,-1));
+        dump(Redis::zrange('out2',0,-1));
 //        foreach(Redis::zrevrange('out',0,-1) as $v){
 ////            dump(Redis::zscore('out',$v));
 //        }
 //        dump(Redis::zscore('out','three'));
 
         //返回key对应的value和score
-        dd(Redis::zrange('out',0,-1,true));die;
+        dd(Redis::zrange('out',0,-1));die;
 //        Redis::del('zz');
 //        for($i=1;$i<=10;$i++){
 //            Redis::zadd('zz',10+$i,'member'.$i);
@@ -357,19 +542,19 @@ class FirstController extends Controller
 
             Redis::zadd($cachekey,$num,json_encode(['name'=>$str]));
 
-            // 由大到小排序
-            $dataOne = Redis::zrevrange($cachekey, 0, -1, true);
 
-            // 由小到大排序
-            $dataTow = Redis::zrange($cachekey, 0, -1, true);
         }
+        // 由大到小排序
+//        $dataOne = Redis::zrevrange($cachekey, 0, -1, true);
 
+        // 由小到大排序
+//        $dataTow = Redis::zrange($cachekey, 0, -1, true);
 //        Redis::zrevrange($cachekey,0,-1,true);//降序排列
 //        Redis::zrange($cachekey,0,-1,true); //升序排列
-
-        echo "<pre>";
-        print_r($dataOne);
-        print_r($dataTow);
+        //由小到大排序
+        dump(Redis::zrange($cachekey, 0, -1));
+//        由大到小排序
+        dump(Redis::zrevrange($cachekey,0,-1));
 
     }
 
@@ -422,42 +607,110 @@ class FirstController extends Controller
     }
 
     //可能认识的人
-    public function guess_friend(){
-        Redis::del('zhangsan_friend');
-        Redis::del('lisi_friend');
-        for($i=1;$i<=5;$i++){
-            Redis::sadd('zhangsan_friend','zs_friend_'.$i);
-            Redis::sadd('lisi_friend','ls_friend_'.$i);
-        }
-        Redis::sadd('zhangsan_friend','ls_friend_2');
-        Redis::sadd('zhangsan_friend','lisi_friend');
-        Redis::sadd('lisi_friend','zhangsan_friend');
-//        dump(Redis::smembers('zhangsan_friend'));
-//        dump(Redis::smembers('lisi_friend'));
-        // sinter/sunion/sdiff 返回两个集合中 交集 / 并集 / 补集
-        $list_ls_zs = Redis::sdiff('lisi_friend','zhangsan_friend');
-        //张三可能认识的人
-        foreach($list_ls_zs as $k=>$v){
-            if($v == 'zhangsan_friend'){
-                unset($list_ls_zs[$k]);
-            }
-        }
-        dump($list_ls_zs);
-        //李四可能认识的人
-        $list_zs_ls = Redis::sdiff('zhangsan_friend','lisi_friend');
-        foreach($list_zs_ls as $k=>$v){
-            if($v == 'lisi_friend'){
-                unset($list_zs_ls[$k]);
-            }
-        }
-        dump($list_zs_ls);
+    public function guess_friend(Request $request){
+        dump("可能认识的人");
+
+//        Redis::del('zhangsan_friend');
+//        Redis::del('lisi_friend');
+//        for($i=1;$i<=5;$i++){
+//            Redis::sadd('zhangsan_friend','zs_friend_'.$i);
+//            Redis::sadd('lisi_friend','ls_friend_'.$i);
+//        }
+//        Redis::sadd('zhangsan_friend','ls_friend_2');
+//        Redis::sadd('zhangsan_friend','lisi_friend');
+//        Redis::sadd('lisi_friend','zhangsan_friend');
+////        dump(Redis::smembers('zhangsan_friend'));
+////        dump(Redis::smembers('lisi_friend'));
+//        // sinter/sunion/sdiff 返回两个集合中 交集 / 并集 / 补集
+//        $list_ls_zs = Redis::sdiff('lisi_friend','zhangsan_friend');
+//        //张三可能认识的人
+//        foreach($list_ls_zs as $k=>$v){
+//            if($v == 'zhangsan_friend'){
+//                unset($list_ls_zs[$k]);
+//            }
+//        }
+////        dump($list_ls_zs);
+//        //李四可能认识的人
+//        $list_zs_ls = Redis::sdiff('zhangsan_friend','lisi_friend');
+//        foreach($list_zs_ls as $k=>$v){
+//            if($v == 'lisi_friend'){
+//                unset($list_zs_ls[$k]);
+//            }
+//        }
+////        dump($list_zs_ls);
+//        return Response::json(['code'=>200,'data'=>[]]);
     }
 
 
+    public function getfile(){
+
+        return response()->fail(40001);
+        return Storage::download('avatars/vbMUKdc80agGkanT28lnTN0wJzFoUsaN8oArbpgL.png');
+    }
 
 
+    public function test1()
+    {
+        /**
+         * 实现Redis分布锁
+         */
+        $key = 'test';
+        //要更新信息的缓存KEY
+        $lockKey = 'lock:' . $key;
+        //设置锁KEY
+        $lockExpire = 10;
+        //设置锁的有效期为10秒
+        //获取缓存信息
+        $result = Redis::get($key);
+        //判断缓存中是否有数据
+        if (empty($result)) {
+            $status = TRUE;
+            while ($status) {
+                //设置锁值为当前时间戳 + 有效期
+                $lockValue = time() + $lockExpire;
+                /**
+                 * 创建锁
+                 * 试图以$lockKey为key创建一个缓存,value值为当前时间戳
+                 * 由于setnx()函数只有在不存在当前key的缓存时才会创建成功
+                 * 所以，用此函数就可以判断当前执行的操作是否已经有其他进程在执行了
+                 * @var [type]
+                 */
+//                redisTemplate.opsForValue().setIfAbsent("lock",3,seconds);
+                $lock = Redis::setnx($lockKey, $lockValue); //值 = 未来的第10s时间
+                /**
+                 * 满足两个条件中的一个即可进行操作jedis
+                 * 1、上面一步创建锁成功;
+                 * 2、   1）判断锁的值（时间戳）是否小于当前时间    Redis::get()
+                 *      2）同时给锁设置新值成功    Redis::getset()
+                 */
 
+                if (!empty($lock) || (Redis::get($lockKey) < time() && Redis::getSet($lockKey, $lockValue) < time())) {
+                    //给锁设置生存时间
+                    Redis::expire($lockKey, $lockExpire);
+                    //******************************
+                    //              此处执行插入、更新缓存操作...
+                    //              //******************************
+                    //              以上程序走完删除锁
+                    //              检测锁是否过期，过期锁没必要删除
 
+                    if (Redis::ttl($lockKey)) {
+                        Redis::del($lockKey);
+                        $status = FALSE;
+
+                        dump("锁被释放");
+                    } else {
+                        /**
+                         * 如果存在有效锁这里做相应处理
+                         *      等待当前操作完成再执行此次请求
+                         *      直接返回
+                         */
+                        sleep(2);//等待2秒后再尝试执行操作
+                        dump("睡眠中");
+                    }
+                }
+            }
+        }
+    }
 
 
 }

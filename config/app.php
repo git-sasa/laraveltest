@@ -37,8 +37,13 @@ return [
     | stack traces will be shown on every error that occurs within your
     | application. If disabled, a simple generic error page is shown.
     |
+    |
+    | 应用调试模式
+    |
+    | 当应用进程处于调试模式时，将在应用。
+    | 如果禁用，
+    | 将显示一个简单的通用错误页面。
     */
-
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
@@ -49,6 +54,8 @@ return [
     | This URL is used by the console to properly generate URLs when using
     | the Artisan command line tool. You should set this to the root of
     | your application so that it is used when running Artisan tasks.
+    |
+
     |
     */
 
@@ -80,7 +87,7 @@ return [
     |
     */
 
-    'locale' => 'en',
+    'locale' => 'zh-CN',
 
     /*
     |--------------------------------------------------------------------------
@@ -106,7 +113,7 @@ return [
     |
     */
 
-    'faker_locale' => 'en_US',
+    'faker_locale' => 'zh_CN',
 
     /*
     |--------------------------------------------------------------------------
@@ -159,6 +166,7 @@ return [
         Illuminate\Auth\Passwords\PasswordResetServiceProvider::class,
         Illuminate\Session\SessionServiceProvider::class,
         Illuminate\Translation\TranslationServiceProvider::class,
+        #Overtrue\LaravelLang\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
 
@@ -176,13 +184,14 @@ return [
         App\Providers\RouteServiceProvider::class,
         Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
         Jenssegers\Mongodb\MongodbServiceProvider::class,
+        App\Providers\ResponseMacroServiceProvider::class,
 
 
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Class Aliases
+    | Class Aliases 別名
     |--------------------------------------------------------------------------
     |
     | This array of class aliases will be registered when this application

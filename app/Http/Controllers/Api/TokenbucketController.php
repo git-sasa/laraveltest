@@ -18,7 +18,7 @@ class TokenbucketController extends Controller
     public function __construct()
     {
         //按天算、按分钟算
-        $this->minNum = 60;
+        $this->minNum = 3;
         $this->dayNum = 1000;
     }
 
@@ -28,6 +28,9 @@ class TokenbucketController extends Controller
             $dayNumKey = $request->input('uid').'_dayNum';
             $min = $this->redis_bucket($minNumKey,$this->minNum,60);
             $day = $this->redis_bucket($dayNumKey,$this->dayNum,86400);
+            if($min['status'] || $day['status']){
+                exit($min['msg'].$day['msg']);
+            }
     }
 
     /**
@@ -41,7 +44,7 @@ class TokenbucketController extends Controller
         $newtime = time();
         $result = ['status'=>true,'msg'=>'无'];
         //Redis watch 命令用于监视 一个（或多个）key，如果在事务执行之前这个（或这些）key 被其他命令所改动，那么事务将被打断
-        Redis::watch();
+        Redis::watch($key);
         $initVal = Redis::get($key);
         if($initVal){
             $initVal = json_decode($initVal,true);
@@ -53,7 +56,7 @@ class TokenbucketController extends Controller
                 return ['status'=>false,'msg'=>'当前令牌已用完，请稍后再试！'];
             }
         }else{
-            $redisVal = json(['num'=>$initNum,'time'=>time()]);
+            $redisVal = json_encode(['num'=>$initNum,'time'=>time()]);
         }
         //Redis Multi 命令用于标记一个事务块的开始
         Redis::multi();
